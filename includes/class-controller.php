@@ -64,6 +64,14 @@ class Marcos_WC_REST_Client_Controller {
 			array_push($params, "per_page={$_GET['per_page']}");
 		}
 
+		if ( isset( $_GET['orderby'] ) ) {
+			array_push($params, "orderby={$_GET['orderby']}");
+		}
+
+		if ( isset( $_GET['order'] ) ) {
+			array_push($params, "order={$_GET['order']}");
+		}
+
 		if ( isset( $_GET['category'] ) ) {
 			array_push($params, "category={$_GET['category']}");
 		}
