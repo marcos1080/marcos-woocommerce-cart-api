@@ -1,6 +1,7 @@
 <?php
 
 include_once dirname( MARCOS_WC_CLIENT_PLUGIN_FILE ) . '/includes/woocommerce_API_connector.php';
+include_once dirname( MARCOS_WC_CLIENT_PLUGIN_FILE ) . '/includes/class-category.php';
 
 class Marcos_WC_REST_Client_Controller {
 	/**
@@ -72,7 +73,7 @@ class Marcos_WC_REST_Client_Controller {
 			array_push($params, "order={$_GET['order']}");
 		}
 
-		$categories = $this->woocommerce_API->get('/products/categories')['body'];
+		$categories = $this->woocommerce_API->get('/products/categories?per_page=20')['body'];
 		if ( isset( $_GET['category'] ) ) {
 			$category_slugs = explode(',', $_GET['category']);
 			$category_ids = array();
@@ -120,37 +121,25 @@ class Marcos_WC_REST_Client_Controller {
 		$categories = array();
 
 		foreach ($data as $category) {
-			$categories[$category->id] = array(
-				'id'				=> $category->id,
-				'parent'			=> $category->parent,
-				'name'				=> $category->name,
-				'slug'				=> $category->slug,
-				'count'				=> $category->count,
+			$categories[$category->id] = new Category(
+				$category->id,
+				$category->parent,
+				$category->name,
+				$category->slug,
+				$category->count,
 			);
 		}
 
 		$nested_categories = array();
 
 		foreach ($categories as $category) {
-			if ($category['parent'] == 0) {
-				$this->addChildrenToCategories($category, $categories);
+			if ($category->parent == 0) {
 				array_push($nested_categories, $category);
+			} else {
+				$categories[$category->parent]->add($category);
 			}
 		}
 
 		return $nested_categories;
-	}
-
-	private function addChildrenToCategories(&$current_category, $indexedCategories) {
-		$children = array();
-
-		foreach ($indexedCategories as $category) {
-			if ($category['parent'] == $current_category['id']) {
-				$this->addChildrenToCategories($category, $indexedCategories);
-				array_push($children, $category);
-			}
-		}
-
-		$current_category += ['children' => $children];
 	}
 }
