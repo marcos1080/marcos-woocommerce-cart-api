@@ -72,8 +72,18 @@ class Marcos_WC_REST_Client_Controller {
 			array_push($params, "order={$_GET['order']}");
 		}
 
+		$categories = $this->woocommerce_API->get('/products/categories')['body'];
 		if ( isset( $_GET['category'] ) ) {
-			array_push($params, "category={$_GET['category']}");
+			$category_slugs = explode(',', $_GET['category']);
+			$category_ids = array();
+
+			foreach ($categories as $category) {
+				if (in_array($category->slug, $category_slugs)) {
+					array_push($category_ids, $category->id);
+				}
+			}
+
+			array_push($params, "category=".implode(',', $category_ids));
 		}
 
 		if ( isset( $_GET['include'] ) ) {
@@ -81,7 +91,6 @@ class Marcos_WC_REST_Client_Controller {
 		}
 
 		$endpoint = implode(['/products', implode($params, "&")], "?");
-
 		$data = $this->woocommerce_API->get($endpoint);
 
 		$return_products = [];
@@ -101,8 +110,47 @@ class Marcos_WC_REST_Client_Controller {
 
 		return array(
 			'items'				=> $return_products,
+			'categories'		=> $this->buildCategoriesObject($categories),
 			'total'				=> $data['headers']['X-WP-Total'],
 			'total-pages'		=> $data['headers']['X-WP-TotalPages'],
 		);
+	}
+
+	private function buildCategoriesObject($data) {
+		$categories = array();
+
+		foreach ($data as $category) {
+			$categories[$category->id] = array(
+				'id'				=> $category->id,
+				'parent'			=> $category->parent,
+				'name'				=> $category->name,
+				'slug'				=> $category->slug,
+				'count'				=> $category->count,
+			);
+		}
+
+		$nested_categories = array();
+
+		foreach ($categories as $category) {
+			if ($category['parent'] == 0) {
+				$this->addChildrenToCategories($category, $categories);
+				array_push($nested_categories, $category);
+			}
+		}
+
+		return $nested_categories;
+	}
+
+	private function addChildrenToCategories(&$current_category, $indexedCategories) {
+		$children = array();
+
+		foreach ($indexedCategories as $category) {
+			if ($category['parent'] == $current_category['id']) {
+				$this->addChildrenToCategories($category, $indexedCategories);
+				array_push($children, $category);
+			}
+		}
+
+		$current_category += ['children' => $children];
 	}
 }
