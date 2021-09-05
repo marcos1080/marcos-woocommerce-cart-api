@@ -3,13 +3,13 @@
 class WoocommerceAPIInterface {
     private static $api_key = 'ck_37032f6d70c9af7a8599daeedb80561300623f27';
     private static $api_secret = 'cs_57b4dd7d1b8211a180e5933ac42741d190244671';
-    private static $base_url = 'https://localhost/wp-json/wc/v3';
+    private static $base_url = '/wp-json/wc/v3';
     
     public function get($endpoint) {
         $curl = curl_init();
 
         $options = array(
-            CURLOPT_URL => $this::$base_url.$endpoint,
+            CURLOPT_URL => get_site_url().$this::$base_url.$endpoint,
             CURLOPT_CUSTOMREQUEST => "GET",
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
