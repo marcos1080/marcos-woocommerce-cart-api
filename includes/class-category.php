@@ -3,7 +3,7 @@
 class Category {
     function __construct($id, $parent, $name, $slug, $count) {
         $this->id = $id;
-        $this->parent = $parent;
+        $this->parentId = $parent;
         $this->name = $name;
         $this->slug = $slug;
         $this->count = $count;

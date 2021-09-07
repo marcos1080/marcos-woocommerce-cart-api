@@ -133,10 +133,10 @@ class Marcos_WC_REST_Client_Controller {
 		$nested_categories = array();
 
 		foreach ($categories as $category) {
-			if ($category->parent == 0) {
+			if ($category->parentId == 0) {
 				array_push($nested_categories, $category);
 			} else {
-				$categories[$category->parent]->add($category);
+				$categories[$category->parentId]->add($category);
 			}
 		}
 
