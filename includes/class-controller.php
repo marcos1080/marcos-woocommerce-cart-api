@@ -73,7 +73,7 @@ class Marcos_WC_REST_Client_Controller {
 			array_push($params, "order={$_GET['order']}");
 		}
 
-		$categories = $this->woocommerce_API->get('/products/categories?per_page=20')['body'];
+		$categories = $this->woocommerce_API->get('/products/categories?per_page=100')['body'];
 		if ( isset( $_GET['category'] ) ) {
 			$category_slugs = explode(',', $_GET['category']);
 			$category_ids = array();
