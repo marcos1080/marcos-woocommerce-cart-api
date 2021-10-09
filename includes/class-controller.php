@@ -35,25 +35,67 @@ class Marcos_WC_REST_Client_Controller {
 	}
 
 	public function get_product() {
-		if ( isset( $_GET['slug'] ) ) {
-			$data = $this->woocommerce_API->get("/products?slug={$_GET['slug']}")['body'];
+		if ( !isset( $_GET['slug'] ) ) {
+			return no_product_error();
+		}
 
-			if ($data && count($data)) {
-				$product = $data[0];
-				return array(
-					'id'				=> $product->id,
-					'name'				=> $product->name,
-					'slug'				=> $product->slug,
-					'images'			=> $product->images,
-					'price'				=> $product->price,
-					'price_html'		=> $product->price_html,
-					'description'		=> $product->description,
-					'stock_quantity'	=> $product->stock_quantity,
-					'stock_status'		=> $product->stock_status,
+		$data = $this->woocommerce_API->get("/products?slug={$_GET['slug']}")['body'];
+
+		if (empty($data) || count($data) == 0) {
+			return no_product_error();
+		}
+
+		$product = $data[0];
+
+		$variations = array();
+		foreach ($this->woocommerce_API->get("/products/{$product->id}/variations")['body'] as $variation) {
+
+			if ($variation->purchasable) {
+				$purchasable_variation = array(
+					'id'			=> $variation->id,
+					'price'			=> $variation->price,
+					'onSale'		=> $variation->on_sale,
+					'inStock'		=> $variation->stock_status == 'instock',
+					'attributes'	=> $variation->attributes,
+					'menuOrder'		=> $variation->menu_order
 				);
+
+				if ($purchasable_variation['onSale']) {
+					$purchasable_variation['salePrice'] = $variation->sale_price;
+				}
+
+				if (isset($variation->description)) {
+					$purchasable_variation['description'] = $variation->description;
+				}
+
+				if (isset($variation->image)) {
+					$purchasable_variation['image'] = array(
+						'id'			=> $variation->image->id,
+						'name'			=> $variation->image->name,
+						'src'			=> $variation->image->src,
+						'alt'			=> $variation->image->alt
+					);
+				}
+
+				array_push($variations, $purchasable_variation);
 			}
 		}
-		
+
+		return array(
+			'id'				=> $product->id,
+			'name'				=> $product->name,
+			'slug'				=> $product->slug,
+			'images'			=> $product->images,
+			'price'				=> $product->price,
+			'price_html'		=> $product->price_html,
+			'description'		=> $product->description,
+			'stock_quantity'	=> $product->stock_quantity,
+			'inStock'			=> $product->stock_status == 'instock',
+			'variations'		=> $variations
+		);
+	}
+
+	public function no_product_error() {
 		return new WP_Error( 'no_product', __('No product found'), array( 'status' => 404 ) );
 	}
 
